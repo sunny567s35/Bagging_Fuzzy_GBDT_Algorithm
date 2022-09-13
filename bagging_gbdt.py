@@ -6,13 +6,14 @@ from sklearn.metrics import mean_squared_error
 from sklearn.metrics import precision_score , accuracy_score , f1_score , recall_score
 from sklearn.metrics import mean_absolute_error
 from sklearn.model_selection import cross_val_score
+from sklearn.ensemble import BaggingClassifier
 
 df = pd.read_csv('heart.csv')
 
 X = df.drop(['target'],axis =1)
 y = df['target']
 
-X_train, X_test, y_train, y_test = train_test_split(X, y,stratify = y)
+X_train, X_test, y_train, y_test = train_test_split(X, y,stratify = y, random_state =10)
 
 regressor = GradientBoostingClassifier(
     max_depth=2,
@@ -32,9 +33,21 @@ best_regressor = GradientBoostingClassifier(
 best_regressor.fit(X_train,y_train)
 
 
-pred = best_regressor.predict(X_test)
+bag_model = BaggingClassifier(
+    base_estimator= best_regressor,
+    n_estimators=100,
+    max_samples = 0.8,
+    bootstrap=True,
+    oob_score = True,
+    random_state = 0
+)
+bag_model.fit(X_train,y_train)
+bag_model.oob_score_
+bag_model.score(X_test,y_test)
 
-scores = cross_val_score(GradientBoostingClassifier(),X,y,cv= 5)
+pred = bag_model.predict(X_test)
+
+scores = cross_val_score(bag_model,X,y,cv= 5)
 print("The score of cross_validiation_score :")
 print(" %.3f " % scores.mean())
 
